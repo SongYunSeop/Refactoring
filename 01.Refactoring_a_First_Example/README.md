@@ -219,3 +219,106 @@ def amount_for(self, rental):
 
     return result
 ```
+
+### Move Method - 메서드 옮기기
+
+`Customer` 클래스의 `amount_for` 메서드는 `Rental` 클래스의 정보를 이용하고 `Customer` 의 정보는 사용하지 않는다.
+
+그러므로 메서드 이동 기법 `amount_for`를 `Rental` 클래스로 옮기자
+
+```python
+from movie import Movie
+
+class Rental():
+    ...
+
+    @property
+    def charge(self):
+        result = 0
+        # 비디오 종류별 대여료 계산
+        if self.movie.price_code == Movie.REGULAR:
+            result += 2
+            if self.days_rented > 2:
+                result += (self.days_rented - 2) * 1.5
+        elif self.movie.price_code == Movie.NEW_RELEASE:
+            result += self.days_rented * 3
+        elif self.movie.price_code == Movie.CHILDRENS:
+            result += 1.5
+            if self.days_rented > 3:
+                result += (self.days_rented - 3) * 1.5
+
+        return result
+```
+
+메서드를 옮기면서 매개변수가 삭제되고 메서드의 이름도 적절하게 바꿨다.
+
+`Customer`의 `amount_for` 메서드도 바꿔주자
+
+```python
+from movie import Movie
+
+class Customer():
+    ...
+
+    def statement(self):
+        total_amount = 0
+        frequent_renter_points = 0
+        rentals = self._rentals
+        result = 'Rental history for ' + self.name + '\n'
+
+        for rental in self._rentals:
+            this_amount = rental.charge
+
+            # 적립 포인트를 1 포인트 증가
+            frequent_renter_points += 1
+
+            # 최신물을 이틀 이상 대여하면 보너스 포인트 지급
+            if rental.movie.price_code == Movie.NEW_RELEASE and rental.days_rented > 1:
+                frequent_renter_points += 1
+
+            # 대여하는 비디오 정보와 대여료 출력
+            result += '\t' + rental.movie.title + '\t' + str(this_amount) + '\n'
+
+            # 현재까지 누적된 총 대여료
+            total_amount += this_amount
+
+        # 푸터 행 추가
+        result += "누적 대여료: " + str(total_amount) + '\n'
+        result += "적립 포인트: " + str(frequent_renter_points)
+        return result
+```
+
+그 다음으로 `this_amount` 변수의 중복이 있는데   
+임시변수를 메서드 호출로 전환(Replace Temp with Query) 기법을 사용해서 `this_amount` 변수를 삭제하자
+
+```python
+from movie import Movie
+
+class Customer():
+    ...
+
+    def statement(self):
+        total_amount = 0
+        frequent_renter_points = 0
+        rentals = self._rentals
+        result = 'Rental history for ' + self.name + '\n'
+
+        for rental in self._rentals:
+            # 적립 포인트를 1 포인트 증가
+            frequent_renter_points += 1
+
+            # 최신물을 이틀 이상 대여하면 보너스 포인트 지급
+            if rental.movie.price_code == Movie.NEW_RELEASE and rental.days_rented > 1:
+                frequent_renter_points += 1
+
+            # 대여하는 비디오 정보와 대여료 출력
+            result += '\t' + rental.movie.title + '\t' + str(rental.charge) + '\n'
+
+            # 현재까지 누적된 총 대여료
+            total_amount += rental.charge
+
+        # 푸터 행 추가
+        result += "누적 대여료: " + str(total_amount) + '\n'
+        result += "적립 포인트: " + str(frequent_renter_points)
+        return result
+```
