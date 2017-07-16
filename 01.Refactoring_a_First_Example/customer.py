@@ -12,29 +12,32 @@ class Customer():
     def name(self):
         return self._name
 
+    @property
+    def total_amount(self):
+        result = 0
+        for rental in self._rentals:
+            # 현재까지 누적된 총 대여료
+            result += rental.charge
+
+        return result
+
+    @property
+    def frequent_renter_points(self):
+        result = 0
+        for rental in self._rentals:
+            result += rental.frequent_renter_points
+
+        return result
+
     def statement(self):
-        total_amount = 0
-        frequent_renter_points = 0
         rentals = self._rentals
         result = 'Rental history for ' + self.name + '\n'
 
         for rental in self._rentals:
-            this_amount = rental.charge
-
-            # 적립 포인트를 1 포인트 증가
-            frequent_renter_points += 1
-
-            # 최신물을 이틀 이상 대여하면 보너스 포인트 지급
-            if rental.movie.price_code == Movie.NEW_RELEASE and rental.days_rented > 1:
-                frequent_renter_points += 1
-
             # 대여하는 비디오 정보와 대여료 출력
-            result += '\t' + rental.movie.title + '\t' + str(this_amount) + '\n'
-
-            # 현재까지 누적된 총 대여료
-            total_amount += this_amount
+            result += '\t' + rental.movie.title + '\t' + str(rental.charge) + '\n'
 
         # 푸터 행 추가
-        result += "누적 대여료: " + str(total_amount) + '\n'
-        result += "적립 포인트: " + str(frequent_renter_points)
+        result += "누적 대여료: " + str(self.total_amount) + '\n'
+        result += "적립 포인트: " + str(self.frequent_renter_points)
         return result

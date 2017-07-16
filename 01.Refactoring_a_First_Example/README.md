@@ -322,3 +322,88 @@ class Customer():
         result += "적립 포인트: " + str(frequent_renter_points)
         return result
 ```
+
+### 적립 포인트 메서드 추출
+
+`frequent_renter_points`를 계산하는 부분을 메서드로 빼서 `Rental` 클래스로 옮겼다.
+
+```python
+class Customer():
+    ...
+
+    def statement(self):
+        total_amount = 0
+        frequent_renter_points = 0
+        rentals = self._rentals
+        result = 'Rental history for ' + self.name + '\n'
+
+        for rental in self._rentals:
+            this_amount = rental.charge
+            frequent_renter_points += rental.frequent_renter_points
+
+            # 대여하는 비디오 정보와 대여료 출력
+            result += '\t' + rental.movie.title + '\t' + str(this_amount) + '\n'
+
+            # 현재까지 누적된 총 대여료
+            total_amount += this_amount
+
+        # 푸터 행 추가
+        result += "누적 대여료: " + str(total_amount) + '\n'
+        result += "적립 포인트: " + str(frequent_renter_points)
+        return result
+
+class Rental():
+    ...
+
+    @property
+    def frequent_renter_points(self):
+        # 최신물을 이틀 이상 대여하면 보너스 포인트 지급
+        if self.movie.price_code == Movie.NEW_RELEASE and self.days_rented > 1:
+            return 2
+        else
+            return 1
+```
+
+### 임시변수 없애기
+
+`Customer`의 `total_amount` 변수와 `frequent_renter_points` 변수는 출력할 때만 사용되므로 변수를 제거해 메서드로 바꾸자
+
+```python
+class Customer():
+    ...
+
+    @property
+    def total_amount(self):
+        result = 0
+        for rental in self._rentals:
+            # 현재까지 누적된 총 대여료
+            result += rental.charge
+
+        return result
+
+    @property
+    def frequent_renter_points(self):
+        result = 0
+        for rental in self._rentals:
+            result += rental.frequent_renter_points
+
+        return result
+
+    def statement(self):
+        rentals = self._rentals
+        result = 'Rental history for ' + self.name + '\n'
+
+        for rental in self._rentals:
+            # 대여하는 비디오 정보와 대여료 출력
+            result += '\t' + rental.movie.title + '\t' + str(rental.charge) + '\n'
+
+        # 푸터 행 추가
+        result += "누적 대여료: " + str(self.total_amount) + '\n'
+        result += "적립 포인트: " + str(self.frequent_renter_points)
+        return result
+```
+
+잠깐 멈추고 생각해보면 리팩토링을 하면 코드가 줄어들고 성능이 좋아질 거라 예상하지만  
+지금의 리팩토링은 코드가 늘어나고 반복문이 늘어남으로 성능이 저하되었다.
+
+이러한 문제들은 최적화 단계에서 수정하자.

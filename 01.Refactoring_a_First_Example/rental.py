@@ -29,3 +29,11 @@ class Rental():
                 result += (self.days_rented - 3) * 1.5
 
         return result
+
+    @property
+    def frequent_renter_points(self):
+        # 최신물을 이틀 이상 대여하면 보너스 포인트 지급
+        if self.movie.price_code == Movie.NEW_RELEASE and self.days_rented > 1:
+            return 2
+        else:
+            return 1
