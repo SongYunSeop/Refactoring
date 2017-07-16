@@ -19,20 +19,7 @@ class Customer():
         result = 'Rental history for ' + self.name + '\n'
 
         for rental in self._rentals:
-            this_amount = 0
-
-            # 비디오 종류별 대여료 계산
-            if rental.movie.price_code == Movie.REGULAR:
-                this_amount += 2
-                if rental.days_rented > 2:
-                    this_amount += (rental.days_rented - 2) * 1.5
-            elif rental.movie.price_code == Movie.NEW_RELEASE:
-                this_amount += rental.days_rented * 3
-            elif rental.movie.price_code == Movie.CHILDRENS:
-                this_amount += 1.5
-                if rental.days_rented > 3:
-                    this_amount += (rental.days_rented - 3) * 1.5
-
+            this_amount = self.amount_for(rental)
 
             # 적립 포인트를 1 포인트 증가
             frequent_renter_points += 1
@@ -51,4 +38,21 @@ class Customer():
         # 푸터 행 추가
         result += "누적 대여료: " + str(total_amount) + '\n'
         result += "적립 포인트: " + str(frequent_renter_points)
+        return result
+
+
+    def amount_for(self, rental):
+        result = 0
+        # 비디오 종류별 대여료 계산
+        if rental.movie.price_code == Movie.REGULAR:
+            result += 2
+            if rental.days_rented > 2:
+                result += (rental.days_rented - 2) * 1.5
+        elif rental.movie.price_code == Movie.NEW_RELEASE:
+            result += rental.days_rented * 3
+        elif rental.movie.price_code == Movie.CHILDRENS:
+            result += 1.5
+            if rental.days_rented > 3:
+                result += (rental.days_rented - 3) * 1.5
+
         return result

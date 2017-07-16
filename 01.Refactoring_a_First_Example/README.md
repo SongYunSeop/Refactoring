@@ -132,10 +132,90 @@ class Customer():
 
 [테스트코드](./test_video_store.py)를 작성하고 리팩토링을 해보자
 
+## 리팩토링!
+
+`statement` 메서드에 너무 많은 기능을 가지고 있으므로 쪼개보자
+
+### Extract Method - 메서드 추출
+
+논리적 코드 뭉치를 찾아서 메서드화 하는 방법
+
+`statement` 안의 `if`문을 아래처럼 하나의 메서드로 추출하자
+
+```python
+class Customer():
+    ...
+
+    def statement(self):
+        total_amount = 0
+        frequent_renter_points = 0
+        rentals = self._rentals
+        result = 'Rental history for ' + self.name + '\n'
+
+        for rental in self._rentals:
+            this_amount = self.amount_for(rental)
+
+            # 적립 포인트를 1 포인트 증가
+            frequent_renter_points += 1
+
+            # 최신물을 이틀 이상 대여하면 보너스 포인트 지급
+            if rental.movie.price_code == Movie.NEW_RELEASE and rental.days_rented > 1:
+                frequent_renter_points += 1
+
+            # 대여하는 비디오 정보와 대여료 출력
+            result += '\t' + rental.movie.title + '\t' + str(this_amount) + '\n'
+
+            # 현재까지 누적된 총 대여료
+            total_amount += this_amount
 
 
+        # 푸터 행 추가
+        result += "누적 대여료: " + str(total_amount) + '\n'
+        result += "적립 포인트: " + str(frequent_renter_points)
+        return result
 
 
+    def amount_for(self, rental):
+        this_amount = 0
+        # 비디오 종류별 대여료 계산
+        if rental.movie.price_code == Movie.REGULAR:
+            this_amount += 2
+            if rental.days_rented > 2:
+                this_amount += (rental.days_rented - 2) * 1.5
+        elif rental.movie.price_code == Movie.NEW_RELEASE:
+            this_amount += rental.days_rented * 3
+        elif rental.movie.price_code == Movie.CHILDRENS:
+            this_amount += 1.5
+            if rental.days_rented > 3:
+                this_amount += (rental.days_rented - 3) * 1.5
 
+        return this_amount
+```
 
+테스트를 수행하고 잘 돌아가는지 확인하자
 
+> 리팩토링은 프로그램을 조금씩 단계적으로 수정하므로 실수해도 버그를 찾기 쉽다.
+
+추출한 `amount_for` 메서드 안의 변수명이 마음에 들지 않는데 바꿔주자
+
+좋은 코드는 그거이 무슨 기능을 하는지 분명히 드러나야 한다.
+
+> 컴퓨터가 인식 가능한 코드는 바보라도 작성할 수 있지만, 인간이 이해할 수 있는 코드는 실력 있는 프로그래머만 작성할 수 있다.
+
+```python
+def amount_for(self, rental):
+    result = 0
+    # 비디오 종류별 대여료 계산
+    if rental.movie.price_code == Movie.REGULAR:
+        result += 2
+        if rental.days_rented > 2:
+            result += (rental.days_rented - 2) * 1.5
+    elif rental.movie.price_code == Movie.NEW_RELEASE:
+        result += rental.days_rented * 3
+    elif rental.movie.price_code == Movie.CHILDRENS:
+        result += 1.5
+        if rental.days_rented > 3:
+            result += (rental.days_rented - 3) * 1.5
+
+    return result
+```
