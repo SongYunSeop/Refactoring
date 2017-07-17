@@ -30,7 +30,6 @@ class Customer():
         return result
 
     def statement(self):
-        rentals = self._rentals
         result = 'Rental history for ' + self.name + '\n'
 
         for rental in self._rentals:
@@ -40,4 +39,14 @@ class Customer():
         # 푸터 행 추가
         result += "누적 대여료: " + str(self.total_amount) + '\n'
         result += "적립 포인트: " + str(self.frequent_renter_points)
+        return result
+
+    def html_statement(self):
+        result = '<h1><em>Rental history for' + self.name + '</em></h1><p>\n'
+
+        for rental in self._rentals:
+            result += rental.movie.title + ': ' + str(rental.charge) + '<br>\n'
+
+        result += '<p>누적 대여료: <em>' + str(self.total_amount) + '</em><p>\n'
+        result += '적립 포인트: <em>' + str(self.frequent_renter_points) + '</em></p>'
         return result

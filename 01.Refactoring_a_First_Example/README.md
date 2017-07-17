@@ -407,3 +407,161 @@ class Customer():
 지금의 리팩토링은 코드가 늘어나고 반복문이 늘어남으로 성능이 저하되었다.
 
 이러한 문제들은 최적화 단계에서 수정하자.
+
+이제 `html_statement`는 별다른 수정없이 추가할 수 있다.
+
+```python
+class Customer():
+    ...
+
+    def html_statement(self):
+        result = '<h1><em>Rental history for' + self.name + '</em></h1><p>\n'
+
+        for rental in self._rentals:
+            result += rental.movie.title + ': ' + str(rental.charge) + '<br>\n'
+
+        result += '<p>누적 대여료: <em>' + str(self.total_amount) + '</em><p>\n'
+        result += '적립 포인트: <em>' str(self.frequent_renter_points) + '</em></p>'
+        return result
+```
+
+### 가격 책정 부분의 조건문을 재정의로 교채
+
+`Rental` 클래스의 `charge`는 `Movie` 객체의 데이터를 사용하는데 이것도 `Movie` 클래스로 옮기자
+
+```python
+class Rental():
+    ...
+
+    @property
+    def charge(self):
+        return self.movie.get_charge(self.days_rented)
+
+    @property
+    def frequent_renter_points(self):
+        return self.movie.get_frequent_renter_points(self.days_rented)
+
+class Movie():
+    ...
+
+    def get_charge(self, days_rented):
+        result = 0
+        # 비디오 종류별 대여료 계산
+        if self.price_code == Movie.REGULAR:
+            result += 2
+            if days_rented > 2:
+                result += (days_rented - 2) * 1.5
+        elif self.price_code == Movie.NEW_RELEASE:
+            result += days_rented * 3
+        elif self.price_code == Movie.CHILDRENS:
+            result += 1.5
+            if days_rented > 3:
+                result += (days_rented - 3) * 1.5
+
+        return result
+
+    def get_frequent_renter_points(self, days_rented):
+        # 최신물을 이틀 이상 대여하면 보너스 포인트 지급
+        if self.price_code == Movie.NEW_RELEASE and days_rented > 1:
+            return 2
+        else:
+            return 1
+
+```
+
+### 상속 구조 만들기
+
+`Movie` 클래스는 비디오 종류에 따라 다른 값을 가지는 메서드들이 있다.
+
+비디오 종류가 늘어나거나 줄어들면 지금 있는 메서드들의 `if`문을 바꾸면 되지만 이는 관리하기가 힘들다.
+
+상속 구조를 만들어서 관리를 하자
+
+`Movie` 클래스를 상속하는 `RegularMovie`, `ChildrensMovie`, `NewReleaseMovie` 클래스로 만들자
+
+하지만 수명주기 동안 비디오이 종류는 언제든지 바뀔 수 있지만 객체는 수정이 불가능 하므로 불일치가 발생한다.
+
+> 이 부분이 조금 헷갈렷는데 만약 NewReleaseMovie가 기간이 지나 RegularMovie로 바뀌어야 하는데
+> 이미 생성한 객체를 수정할 수 없으므로 불일치가 생긴다는 말 같다.
+
+[Gang of Four의 State Pattern](https://en.wikipedia.org/wiki/State_pattern)을 적용하면 해결할 수 있다.
+
+`Movie` 클래스 안에 종류를 구분하는 price_code를 `Price`라는 클래스를 인다이렉션 하면 된다.
+
+이때 `Price` 클래스를 `abstract class`로 만들어 다향성을 지원한다.
+
+```python
+class Movie():
+    ...
+
+    def __init__(self, title, price_code):
+        self._title = title
+        self.price_code = price_code
+
+    @property
+    def price_code(self):
+        return self._price_code.get_price_code()
+
+    @price_code.setter
+    def price_code(self, price_code):
+        if price_code == Movie.REGULAR:
+            self._price_code = RegularPrice()
+        elif price_code == Movie.NEW_RELEASE:
+            self._price_code = NewReleasePrice()
+        elif price_code == Movie.CHILDRENS:
+            self._price_code = ChildrensPrice()
+
+    ...
+
+    def get_charge(self, days_rented):
+        return self._price_code.get_charge(days_rented)
+
+    ...
+
+from abc import ABCMeta, abstractmethod
+
+class Price:
+    __metaclass__ = ABCMeta
+
+    @abstractmethod
+    def get_price_code(self):
+        pass
+
+    @abstractmethod
+    def get_charge(self, days_rented):
+        pass
+
+
+class ChildrensPrice(Price):
+
+    def get_price_code(self):
+        return Movie.CHILDRENS
+
+    def get_charge(self, days_rented):
+        result = 1.5
+        if days_rented > 3:
+            result += (days_rented - 3) * 1.5
+        return result
+
+
+class NewReleasePrice(Price):
+
+    def get_price_code(self):
+        return Movie.NEW_RELEASE
+
+    def get_charge(self, days_rented):
+        return days_rented * 3
+
+
+class RegularPrice(Price):
+
+    def get_price_code(self):
+        return Movie.REGULAR
+
+    def get_charge(self, days_rented):
+        result = 2
+        if days_rented > 2:
+            result += (days_rented - 2) * 1.5
+        return result
+
+```
