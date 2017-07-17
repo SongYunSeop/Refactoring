@@ -30,11 +30,7 @@ class Movie():
         return self._price_code.get_charge(days_rented)
 
     def get_frequent_renter_points(self, days_rented):
-        # 최신물을 이틀 이상 대여하면 보너스 포인트 지급
-        if self.price_code == Movie.NEW_RELEASE and days_rented > 1:
-            return 2
-        else:
-            return 1
+        return self._price_code.get_frequent_renter_points(days_rented)
 
 
 class Price:
@@ -46,6 +42,10 @@ class Price:
 
     @abstractmethod
     def get_charge(self, days_rented):
+        pass
+
+    @abstractmethod
+    def get_frequent_renter_points(self, days_rented):
         pass
 
 
@@ -60,6 +60,9 @@ class ChildrensPrice(Price):
             result += (days_rented - 3) * 1.5
         return result
 
+    def get_frequent_renter_points(self, days_rented):
+        return 1
+
 
 class NewReleasePrice(Price):
 
@@ -68,6 +71,9 @@ class NewReleasePrice(Price):
 
     def get_charge(self, days_rented):
         return days_rented * 3
+
+    def get_frequent_renter_points(self, days_rented):
+        return 2 if days_rented > 1 else 1
 
 
 class RegularPrice(Price):
@@ -80,3 +86,6 @@ class RegularPrice(Price):
         if days_rented > 2:
             result += (days_rented - 2) * 1.5
         return result
+
+    def get_frequent_renter_points(self, days_rented):
+        return 1

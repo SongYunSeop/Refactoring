@@ -565,3 +565,42 @@ class RegularPrice(Price):
         return result
 
 ```
+
+`get_frequent_renter_points` 메서드도 위 처럼 바꿔보자.
+
+```python
+class Movie():
+    ...
+
+    def get_frequent_renter_points(self, days_rented):
+        return self._price_code.get_frequent_renter_points(days_rented)
+
+class Price:
+    ...
+
+    @abstractmethod
+    def get_frequent_renter_points(self, days_rented):
+        pass
+
+
+class ChildrensPrice(Price):
+    ...
+
+    def get_frequent_renter_points(self, days_rented):
+        return 1
+
+
+class NewReleasePrice(Price):
+    ...
+
+    def get_frequent_renter_points(self, days_rented):
+        return 2 if days_rented > 1 else 1
+
+
+class RegularPrice(Price):
+    ...
+    
+    def get_frequent_renter_points(self, days_rented):
+        return 1
+
+```
